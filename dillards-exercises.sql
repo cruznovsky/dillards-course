@@ -43,3 +43,24 @@ from trnsact
 where stype = 'P'
 group by sku
 order by sum_in_summer desc;
+
+-- What is the average daily revenue for each store/month/year combination in the database? Modify the query you wrote to assess the
+-- average daily revenue for each store/month/year combination with a clause that removes all the data from August, 2005. 
+-- Excludes all store/month/yearthat have less than 20 days of data in each month
+
+select 	sub.store as store, 
+	ub.year_num as year_num, 
+	sub.month_num as month_num, 
+	sub.avg_revenue as avg_revenue
+from (select store,
+	extract(year from saledate) as year_num,
+	extract(month from saledate) as month_num,
+	count(distinct saledate) as num_days,
+	sum(amt) / count(distinct saledate) as avg_revenue
+	from trnsact
+	where stype = 'p'
+		and not (month_num = 8 and year_num = 2005)
+	group by year_num, month_num, store
+	having num_days >= 20
+	) as sub
+order by year_num, month_num;
