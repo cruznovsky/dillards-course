@@ -29,3 +29,22 @@ FROM (SELECT d.dog_guid AS dogID,
 	        AND (d.exclude = 0 OR d.exclude IS NULL)
 	GROUP BY dogID) AS NumberTests
 GROUP BY dogDimension
+
+-- Which 5 states within the United States have the most Dognition customers, once all dog_guids and user_guids with a value of "1" in their exclude
+-- columns are removed? 
+
+select 	distinctUser.state as userState, 
+		count(distinct distinctUser.userID) as customers
+from complete_tests as c
+inner join (select distinct d.dog_guid,
+		u.user_guid as userID,
+		u.state as state
+		from dogs as d
+		inner join users as u on d.user_guid = u.user_guid
+		where (d.exclude = 0 or d.exclude is null)
+			and (u.exclude = 0 or u.exclude is null)
+			and u.country = 'US') as distinctUser
+	on c.dog_guid = distinctUser.dog_guid
+group by userState
+order by customers desc
+limit 5;
