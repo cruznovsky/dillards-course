@@ -64,3 +64,29 @@ from (select store,
 	having num_days >= 20
 	) as sub
 order by year_num, month_num;
+
+-- What is the average daily revenue brought in by Dillard’s stores in areas of high, medium, or low levels of high school education?
+-- Define areas of “low” education as those that have high school graduation rates between 50-60%, areas of “medium” education as 
+-- those that have high school graduation rates between 60.01-70%, and areas of “high” education as those that have high school graduation rates of
+-- above 70%
+
+select 	case when msa.msa_high between 50 and 60 then 'Low'
+		when msa.msa_high > 60 and msa.msa_high <= 70 then 'Medium'
+		when msa.msa_high > 70 then 'High'
+		end as edu_level,
+		(sum(sub.sum_amt) / sum(sub.num_days)) as avg_rev
+from (
+	select 	store,
+		extract(year from saledate) as year_num,
+		extract(month from saledate) as month_num,
+		count(distinct saledate) as num_days,
+		sum(amt) as sum_amt
+	from trnsact
+	where stype = 'p'
+		and not (extract(month from saledate) = 8 and extract(year from saledate) = 2005)
+	group by year_num, month_num, store
+	having num_days >= 20
+     ) as sub
+inner join store_msa as msa
+	on sub.store = msa.store
+group by edu_level;
