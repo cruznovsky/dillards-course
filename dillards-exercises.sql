@@ -90,3 +90,27 @@ from (
 inner join store_msa as msa
 	on sub.store = msa.store
 group by edu_level;
+
+-- Compare the average daily revenues of the stores with the highest median msa_income and the lowest median msa_income.
+-- In what city and state were these stores, and which store had a higher average daily revenue? 
+
+select 	city,
+	state,
+	(sum(sum_amt) / sum(num_days)) as avg_rev
+from (
+	select 	store,
+		extract(year from saledate) as year_num,
+		extract(month from saledate) as month_num,
+		count(distinct saledate) as num_days,
+		sum(amt) as sum_amt
+	from trnsact
+	where stype = 'p'
+		and not (extract(month from saledate) = 8 and extract(year from saledate) = 2005)
+	group by year_num, month_num, store
+	having num_days >= 20
+     ) as sub
+inner join store_msa as msa
+	on sub.store = msa.store
+where msa_income in (
+	(select max(msa_income) from store_msa), (select min(msa_income) from store_msa))
+group by city, state;
