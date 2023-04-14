@@ -114,3 +114,22 @@ inner join store_msa as msa
 where msa_income in (
 	(select max(msa_income) from store_msa), (select min(msa_income) from store_msa))
 group by city, state;
+
+-- What is the brand of the sku with the greatest standard deviation in sprice?
+-- Only examine skus that have been part of over 100 transactions.
+
+select s.sku, s.brand, stddev_samp(t.sprice) AS st_dev
+from skuinfo AS s
+inner join trnsact AS t on s.sku = t.sku
+group by s.sku, s.brand
+having count(*) > 100 
+	and stddev_samp(t.sprice) = (
+			select max(st_dev)
+			from (
+				select stddev_samp(t2.sprice) as st_dev
+				from skuinfo as s2
+				inner join trnsact  as t2 on s2.sku = t2.sku 
+				group by s2.sku, s2.brand
+				having count(*) > 100
+			      ) as st_devs
+				    );
