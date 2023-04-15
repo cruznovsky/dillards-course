@@ -133,3 +133,20 @@ having count(*) > 100
 				having count(*) > 100
 			      ) as st_devs
 				    );
+
+-- What was the average daily revenue Dillard’s brought in during each month of the year? 
+
+select  year_month,  
+	sum(sum_amt)/sum(num_days) as avg_revenue
+from (
+	select 	store, 
+		extract(year from saledate)||extract(month from saledate) as year_month,
+		count(distinct saledate) as num_days,
+		sum(amt) as sum_amt
+	from trnsact
+	where stype = 'p'
+		and not (extract(month from saledate) = 8 and extract(year from saledate) = 2005)
+	group by year_month, store
+	having num_days >= 20) as sub
+group by year_month
+order by avg_revenue desc;
