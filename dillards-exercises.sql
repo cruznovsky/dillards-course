@@ -150,3 +150,15 @@ from (
 	having num_days >= 20) as sub
 group by year_month
 order by avg_revenue desc;
+
+-- What vendor has the greatest number of distinct skus in the transaction table that do not exist in the skstinfo table?  
+
+SELECT 	skuinfo.vendor, 
+	COUNT(DISTINCT trnsact.SKU) AS distinct_skus_not_in_skstinfo
+FROM trnsact
+JOIN skuinfo ON trnsact.SKU = skuinfo.SKU
+LEFT JOIN skstinfo ON trnsact.SKU = skstinfo.SKU
+WHERE skstinfo.SKU IS NULL
+GROUP BY skuinfo.vendor
+ORDER BY distinct_skus_not_in_skstinfo DESC
+LIMIT 1;
