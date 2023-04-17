@@ -162,3 +162,33 @@ WHERE skstinfo.SKU IS NULL
 GROUP BY skuinfo.vendor
 ORDER BY distinct_skus_not_in_skstinfo DESC
 LIMIT 1;
+
+-- What is the city and state of the store which had the greatest increase in average daily 
+-- revenue (as defined in Teradata Week 5 Exercise Guide) from November to December?
+
+with nov_avg as 
+(
+	select 	store, 
+		sum(amt)/count(distinct saledate) as nov_avg_daily
+	from trnsact 
+	where extract(month from saledate) = 11 and stype = 'p'
+	group by store
+	having count(distinct saledate) >= 20
+), dec_avg as 
+(
+	select 	store, 
+		sum(amt)/count(distinct saledate) as dec_avg_daily
+	from trnsact 
+	where extract(month from saledate) = 12 and stype = 'p'
+	group by store
+	having count(distinct saledate) >= 20
+)
+
+select 	n.store, 
+	s.city,
+	s.state,
+	d.dec_avg_daily-n.nov_avg_daily as avg_inc
+from nov_avg n
+inner join dec_avg d on n.store = d.store
+inner join strinfo as s on n.store = s.store
+order by avg_inc desc;
