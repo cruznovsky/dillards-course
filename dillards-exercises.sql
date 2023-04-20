@@ -192,3 +192,37 @@ from nov_avg n
 inner join dec_avg d on n.store = d.store
 inner join strinfo as s on n.store = s.store
 order by avg_inc desc;
+
+-- Divide stores up so that stores with msa populations between 1 and 100,000 are labeled 'very small', stores with msa populations between 100,001 
+-- and 200,000 are labeled 'small', stores with msa populations between 200,001 and 500,000 are labeled 'med_small', stores with msa populations 
+-- between 500,001 and 1,000,000 are labeled 'med_large', stores with msa populations between 1,000,001 and 5,000,000 are labeled “large”, and stores 
+-- with msa_population greater than 5,000,000 are labeled “very large”. What is the average daily revenue for a store in a “very large” population msa?
+
+select 	case 
+	when msa_pop between 1 and 100000 
+		then 'Very small'
+	when msa_pop between 100001 and 200000 
+		then 'Small'
+	when msa_pop between 200001 and 500000 
+		then 'Med_Small'
+	when msa_pop between 500001 and 1000000 
+		then 'Med_Large'
+	when msa_pop between 1000001 and 5000000
+		then 'Large'
+	when msa_pop > 5000000
+		then 'Very large'
+	end as msa_group,
+	sum(sub.revenue)/sum(sub.num_days) as avg_rev
+from   (select 	t.store,
+		extract(year from saledate) as year_num,
+		extract(month from saledate) as month_num,
+		count(distinct saledate) as num_days,
+		sum(amt) as revenue,
+		s.msa_pop as msa_pop
+	from trnsact t
+	inner join store_msa s on t.store = s.store
+	where stype = 'p'
+		and not (month_num = 8 and year_num = 2005)
+	group by year_num, month_num, t.store, msa_pop
+	having num_days >= 20) as sub
+group by msa_group;
